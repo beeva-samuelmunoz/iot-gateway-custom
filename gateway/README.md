@@ -5,8 +5,8 @@
 * [Installation and configuration](#installation)
 * [Access Point](#access_point)
 * [Firewall](#firewall)
-* [Fog computing](#fog_computing)
 
+_Note: on the configuration files are located in the `etc` folder mimicking the `/etc` folder of the gateway._
 
 ## Hardware  <a name="hardware"></a>
 
@@ -132,7 +132,7 @@ apt-get install hostapd dnsmasq
 ### Set wlan0 as the AP
 Do not use DHCP on the interface.
 ```
-echo "denyinterfaces wlan0" >> /etc/dhcpd.conf
+echo "denyinterfaces wlan0" >> /etc/dhcpcd.conf
 ```
 _Note: This must be above any added interface lines._
 
@@ -226,12 +226,7 @@ and set the line `DAEMON_CONF="/etc/hostapd/hostapd.conf"`
 ### dnsmasq
 * [Webpage](http://www.thekelleys.org.uk/dnsmasq/doc.html)
 
-Backup the file:
-```bash
-mv /etc/dnsmasq.conf /etc/dnsmasq.conf.orig
-```
-
-And create the new file:
+Edit the file:
 ```bash
 nano /etc/dnsmasq.conf
 ```
@@ -257,65 +252,40 @@ And you can see the access point and connect to it.
 
 ## Firewall <a name="firewall"></a>
 * [Webpage](http://shorewall.org/)
-
+* Version:
+* Installation: 4.6.4.3
 ```bash
 apt-get install shorewall
 ```
 
 ### Configuration
 
+#### General
+* Enable IP forwarding.
+* File: `/etc/shorewall/shorewall.conf`
+
 #### Interfaces
-* Map hardware network interfaces.
+* Map hardware network interfaces to zones.
 * File: `/etc/shorewall/interfaces`
-```
-#ZONE   INTERFACE       OPTIONS
-wired   eth0
-wifi    wlan0
-```
 
 #### Zones
-* Define zones.
+* Define zones properties.
 * File: `/etc/shorewall/zones`
-```
-#ZONE   TYPE            OPTIONS         IN                      OUT
-#                                       OPTIONS                 OPTIONS
-fw      firewall
-wired   ip
-wifi    ip
-```
 
 #### Policy
-* Define general policy communications.
+* Define communication policies between zones.
 * File: `/etc/shorewall/policy`
-```
-#SOURCE DEST    POLICY          LOG     LIMIT:          CONNLIMIT:
-#                               LEVEL   BURST           MASK
-fw      all     ACCEPT
-wifi    wired   ACCEPT          info
-wifi    fw      ACCEPT          info
-wired   fw      DROP            info
-wired   wifi    DROP
-```
 
 #### Rules
 * Define exceptions to the rules.
+* Here we define
 * File: `/etc/shorewall/rules`
-```
-#ACTION         SOURCE          DEST            PROTO   DEST    SOURCE          ORIGINAL        RATE            USER/   MARK    CONNLIMIT       TIME            HEADE$
-#                                                       PORT    PORT(S)         DEST            LIMIT           GROUP
-?SECTION ALL
-?SECTION ESTABLISHED
-?SECTION RELATED
-?SECTION INVALID
-?SECTION UNTRACKED
-?SECTION NEW
-Invalid(DROP)   wired           $FW             tcp
-SSH(ACCEPT)     wired           $FW
-Ping(ACCEPT)    wired           $FW
-```
 
+#### Masquerading
+* Define masquerading between interfaces.
+* File: `/etc/shorewall/masq`
 
-
-
-## Fog Computing <a name="fog_computing"></a>
-apache nifi
+#### Troubleshooting
+I had trouble with shorewall not starting at boot time. It seemed to be a problem with systemd.
+* Copy the file `/etc/systemd/system/shorewall.service`
+* Enable shorewall at boot time: `systemctl enable shorewall.service`
