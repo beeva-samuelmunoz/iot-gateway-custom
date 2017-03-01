@@ -16,26 +16,17 @@ There are three independent parts to set up:
 
 ## Running the PoC
 Requirements:
-1_ The gateway is working.
-1_ The MQTT broker is running.
-1_ The thing is flashed with the firmware.
+1. The gateway is working.
+1. The MQTT broker is running.
+1. The thing is flashed with the firmware.
 
 
-### Bridge the MQTT to the intranet
-So far the gateway is configured in a generic way. For our intentions, it is needed to make the MQTT broker to be visible inside the intranet so things can connect to it.
-We don't want things to connect directly to the internet, instead we want to simulate the gateway provides the MQTT service. That is a reverse NAT service.
+### External MQTT broker
+If you use an external MQTT broker, edit the DNAT rule in the gateway file `/etc/shorewall/rules`.
 
-
-Add the following line to `/etc/shorewall/rules`.
+Example
 ```
-DNAT            wifi            wired:INV01361.local  tcp       1883
-```
-
-Create a masquerade file `/etc/shorewall/masq` with the following content.
-_NOTE: I think this is not correct, but is the only way it worked. I also tested snat as masq is deprecated._
-```
-wlan0 eth0
-eth0 wlan0
+DNAT            wifi            wired:m10.cloudmqtt.com:14411       tcp     1883
 ```
 
 And restart the service.
@@ -47,3 +38,26 @@ service shorewall restart
 ### Listening in the data platform
 
 http://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices
+
+### Test
+
+#### Reading sensors
+```
+# Whole device, including led
+mosquitto_sub -h localhost -p 1883 -t 'BEEVA-06/SENSOR-01/#'
+
+# Temperature
+mosquitto_sub -h localhost -p 1883 -t 'BEEVA-06/SENSOR-01/temperature'
+
+# Humidity
+mosquitto_sub -h localhost -p 1883 -t 'BEEVA-06/SENSOR-01/humidity'
+```
+
+#### Using the led
+```bash
+# Swith the LED On
+mosquitto_pub -h localhost -p 1883 -t 'BEEVA-06/SENSOR-01/LED' -m "1"
+
+# Swith the LED Off
+mosquitto_pub -h localhost -p 1883 -t 'BEEVA-06/SENSOR-01/LED' -m "0"
+```
