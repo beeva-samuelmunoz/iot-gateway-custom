@@ -38,12 +38,13 @@ MQTT_CLIENT = ""
 function read_temp()
   status, temp, humi, temp_dec, humi_dec = dht.read(DHT11_PIN)
   if status == dht.OK then
+    print("[DHT11] Temperature: "..temp.."ºC  /  Humidity: "..humi.."%")
     MQTT_CLIENT:publish(MQTT_TOPIC.."/temperature", temp, 0, 0,
-      function(client) print("[MQTT] TEMPERATURE: "..temp.."ºC") end
+      function(client) print("[MQTT] Publish") end
     )
     MQTT_CLIENT:publish(MQTT_TOPIC.."/humidity", humi, 0 ,0,
-      function(client) print("[MQTT] HUMIDITY: "..humi.."%")
-    end)
+      function(client) print("[MQTT] Publish") end
+    )
   elseif status == dht.ERROR_CHECKSUM then
     print("[DHT11] ERROR_CHECKSUM")
   elseif status == dht.ERROR_TIMEOUT then
@@ -53,12 +54,12 @@ end
 
 -- Actuator LED
 function mqtt_led(client, topic, message)
-  print("[MQTT] TOPIC: "..topic.."    MESSAGE: "..message)
+  print("[MQTT] Topic: "..topic.."    Message: "..message)
   if message == "1" then
-    print("[LED] ON")
+    print("[LED] On")
     gpio.write(LED_PIN, gpio.HIGH)
   elseif message == "0" then
-    print("[LED] OFF")
+    print("[LED] Off")
     gpio.write(LED_PIN, gpio.LOW)
   end
 end
@@ -66,7 +67,7 @@ end
 
 -- Main logic
 function mqtt_connected(client)
-  print("[MQTT] CONNECTED")
+  print("[MQTT] Connected")
   TIMER = tmr.create():alarm(DHT11_PERIOD, tmr.ALARM_AUTO, read_temp)
   MQTT_CLIENT:subscribe(MQTT_TOPIC.."/LED", 0,
     function(client) print("[MQTT] Subscribed") end
@@ -74,7 +75,7 @@ function mqtt_connected(client)
 end
 
 function mqtt_disconnected(client, reason)
-  print("[MQTT] DISCONNECTED: "..reason)
+  print("[MQTT] Disconnected: "..reason)
   tmr:unregister(TIMER)
   tmr.create():alarm(30000, tmr.ALARM_SINGLE, mqtt_connect)
 end
